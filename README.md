@@ -1,5 +1,7 @@
 # tidebot
 
+[![tests](https://github.com/vajdaij/tidebot/actions/workflows/tests.yml/badge.svg)](https://github.com/vajdaij/tidebot/actions/workflows/tests.yml)
+
 Tide schedules via MeshCore. Fetches today's high/low tide predictions from
 [NOAA CO-OPS](https://tidesandcurrents.noaa.gov/) and posts them to a MeshCore
 channel through a companion node connected over Bluetooth LE.
@@ -13,6 +15,7 @@ Defaults to Sunset Beach Pier, NC (station `8659897`).
 | `tide_bot.py` | Fetches tides, connects to the node over BLE (with retries), posts to the channel |
 | `requirements.txt` | Python dependencies (`meshcore`, `requests`) |
 | `Dockerfile` | Container image for running the script |
+| `tests/` | Offline tests with a fake NOAA API and a fake MeshCore node |
 
 ## Configuration
 
@@ -64,6 +67,21 @@ about 50 minutes per day, so posting a day's schedule each morning works well:
 # Docker
 0 6,14 * * * docker run --rm --net=host --privileged -v /var/run/dbus:/var/run/dbus tide-bot >> /var/log/tide_bot.log 2>&1
 ```
+
+## Tests
+
+```bash
+python -m unittest -v
+```
+
+The tests need no network, Bluetooth, or radio. They cover message formatting,
+NOAA error responses, BLE connect retries, send failures, and exit codes. A
+few extra checks confirm the installed `meshcore` library still has the
+functions this script calls; they're skipped if `meshcore` isn't installed.
+
+GitHub Actions runs the tests on every push and pull request, and also weekly,
+since `meshcore` is unpinned and a new release could break the bot without any
+change here. It also checks that the Docker image builds.
 
 ## Notes
 
