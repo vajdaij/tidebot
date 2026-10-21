@@ -34,6 +34,8 @@ jobs:
         run: pip show meshcore | head -2
 
       - name: Run offline tests (fake NOAA and fake radio)
+        env:
+          REQUIRE_MESHCORE: "1"
         run: python -m unittest -v
 
   docker:

@@ -5,6 +5,7 @@ import asyncio
 import importlib
 import inspect
 import logging
+import os
 import pkgutil
 import sys
 import types
@@ -18,6 +19,8 @@ try:
     import meshcore  # noqa: F401
     HAVE_MESHCORE = True
 except ImportError:
+    if os.environ.get("REQUIRE_MESHCORE"):  # set in CI so these checks can't silently skip
+        raise
     HAVE_MESHCORE = False
     stub = types.ModuleType("meshcore")
     stub.MeshCore = type("MeshCore", (), {})
