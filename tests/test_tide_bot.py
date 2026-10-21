@@ -161,6 +161,20 @@ class MainTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertTrue(node.disconnected)
 
+    def test_dry_run_prints_without_touching_radio(self):
+        create = mock.AsyncMock()
+        with mock.patch("tide_bot.requests.get", return_value=noaa(SAMPLE)), \
+             mock.patch.object(tide_bot.MeshCore, "create_ble", create, create=True), \
+             mock.patch("builtins.print") as printed:
+            code = run(tide_bot.main(dry_run=True))
+        self.assertEqual(code, 0)
+        create.assert_not_awaited()
+        self.assertTrue(printed.call_args.args[0].startswith("Sunset Beach tides:"))
+
+    def test_dry_run_flag_parses(self):
+        self.assertTrue(tide_bot.parse_args(["--dry-run"]).dry_run)
+        self.assertFalse(tide_bot.parse_args([]).dry_run)
+
     def test_connect_failure_exits_1(self):
         code, _ = self._main(create_error=OSError("no adapter"))
         self.assertEqual(code, 1)

@@ -9,10 +9,14 @@ Setup:
     pip install meshcore requests
 
 Usage:
+    Check the message without posting it:
+        python3 tide_bot.py --dry-run
+
     Fill in BLE_ADDRESS and CHANNEL_IDX below, then run directly or via cron:
         0 6,14 * * * /usr/bin/python3 /path/to/tide_bot.py >> /var/log/tide_bot.log 2>&1
 """
 
+import argparse
 import asyncio
 import logging
 import sys
@@ -91,7 +95,7 @@ async def send_tides(mc: MeshCore, message: str) -> bool:
     return True
 
 
-async def main() -> int:
+async def main(dry_run: bool = False) -> int:
     try:
         message = get_tides()
     except Exception as e:
@@ -99,6 +103,11 @@ async def main() -> int:
         return 1
 
     log.info("Prepared message:\n%s", message)
+
+    if dry_run:
+        log.info("Dry run: not connecting to the node or posting.")
+        print(message)
+        return 0
 
     mc = None
     try:
@@ -116,5 +125,13 @@ async def main() -> int:
                 pass
 
 
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Post today's tides to a MeshCore channel.")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="fetch tides and print the message without touching the radio")
+    return parser.parse_args(argv)
+
+
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    args = parse_args()
+    sys.exit(asyncio.run(main(dry_run=args.dry_run)))

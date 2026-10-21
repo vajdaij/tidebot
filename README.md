@@ -40,7 +40,8 @@ python tide_bot.py
 ```
 
 Run it once by hand before scheduling it, so you can see the connection and send
-logs.
+logs. To check the message without posting it, use `python tide_bot.py --dry-run`.
+See [Manual testing](#manual-testing) for a full checklist.
 
 ## Run with Docker
 
@@ -67,6 +68,32 @@ about 50 minutes per day, so posting a day's schedule each morning works well:
 # Docker
 0 6,14 * * * docker run --rm --net=host --privileged -v /var/run/dbus:/var/run/dbus tide-bot >> /var/log/tide_bot.log 2>&1
 ```
+
+## Manual testing
+
+Work through these in order on the Pi. Each step adds one real piece, so if
+something fails you know where to look.
+
+1. **NOAA only (posts nothing).**
+   ```bash
+   python tide_bot.py --dry-run
+   ```
+   You should see "Sunset Beach tides:" followed by about four High/Low lines,
+   and exit code 0 (`echo $?`). Compare the times with
+   [NOAA's page for the station](https://tidesandcurrents.noaa.gov/noaatidepredictions.html?id=8659897).
+   They should match exactly.
+2. **Wrong station (posts nothing).** Temporarily set `STATION_ID = "0000000"`
+   and run `--dry-run` again. It should log a NOAA error and exit with code 1.
+   Put the real ID back.
+3. **Bluetooth (posts nothing).** Run `meshcore-cli` and confirm it can connect
+   to your node and that `CHANNEL_IDX` points at the channel you expect.
+4. **Real post.** Set `CHANNEL_IDX` to a private test channel first if you have
+   one, then run `python tide_bot.py`. Check the message arrives on another node
+   and the log ends with "Message sent successfully".
+5. **Node unreachable.** Power off or unpair the node and run it again. It
+   should try 3 times, about 10 seconds apart, then exit with code 1.
+6. **Cron.** After the first scheduled run, check `/var/log/tide_bot.log` for
+   the same output as step 4.
 
 ## Tests
 
